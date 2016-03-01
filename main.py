@@ -42,15 +42,16 @@ def network():
     # sum the elmements along horizontal axis for getting bag of words representation
     cnet = tf.transpose(tf.reduce_sum(c, 2)) # D*N
     mnet = tf.transpose(tf.reduce_sum(m, 2)) # D*N
-    unet = tf.reduce_sum(u) # D*1
+    unet = tf.reduce_sum(u, 1, keep_dims=True) # D*1
     #
     # # get softmax probabilities for each memory with input
-    # scores = np.dot(tf.transpose(mnet), unet)# get match score of u with each of the memories, N*1
-    # p = tf.nn.softmax(scores) # N*1
+    scores = tf.matmul(tf.transpose(mnet), unet)# get match score of u with each of the memories, N*1
+    p = tf.nn.softmax(scores) # N*1
     #
     # # get prediction
-    # o = tf.matmul(cnet, p) # D*1
-    # pred = tf.matmul(tf.transpose(W), (o + unet)) # V*1
+    o = tf.matmul(cnet, p) # D*1
+    pred = tf.matmul(tf.transpose(W), (o + unet)) # V*1
+    print pred
 
     init = tf.initialize_all_variables()
 
