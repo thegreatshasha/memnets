@@ -6,5 +6,6 @@
 * While defining matrices, please also write down the dimensions next to it
 
 ### Todo
-* Try it out on real data
+* Try it out on small babl tasks
+* Try it out on bigger babl tasks
 * Implement multiple hops
