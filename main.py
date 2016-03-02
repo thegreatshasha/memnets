@@ -1,21 +1,26 @@
 import tensorflow as tf
 import numpy as np
+from tasks import inputt,question,n,vocab, answer
+
+#print x,q,n,vocab, answer
+# Not really sure what's the best way to do this
+D = 4
+N = inputt.shape[0] # no of inputs/memories
+V = len(vocab) # vocabulary size
+L = inputt.shape[2] # max sentence length
 
 def network():
     # porting the dataflow right now. we are using just a single hop and evaluating it on babl toy tasks
 
-    # dimensions
-    D = 3 # embedding space dimension
-    N = 2 # no of inputs/memories
-    V = 4 # vocabulary size
-    L = 4
-
     # data placeholder
-    #x = tf.placeholder(tf.float32, shape=(N, V, L))
-    #q = tf.placeholder(tf.float32, shape=(V, L))
     with tf.name_scope("input") as scope:
-        x = tf.constant([[[1,0,0,0],[0,0,0,0],[0,0,1,0],[0,0,1,0]],[[1,0,0,0],[0,0,0,0],[0,0,1,0],[0,0,1,0]]], dtype=tf.float32, name='x')
-        q = tf.constant([[1,0,0,0],[0,0,0,0],[0,0,1,0],[0,0,1,0]], dtype=tf.float32, name='q')
+        x = tf.placeholder(tf.float32, name='x')
+        q = tf.placeholder(tf.float32, name='q')
+        y = tf.placeholder(tf.float32, name='y')
+        #x = tf.constant([[[1,0,0,0],[0,0,0,0],[0,0,1,0],[0,0,1,0]],[[1,0,0,0],[0,0,0,0],[0,0,1,0],[0,0,1,0]]], dtype=tf.float32, name='x')
+        #q = tf.constant([[1,0,0,0],[0,0,0,0],[0,0,1,0],[0,0,1,0]], dtype=tf.float32, name='q')
+
+    # Define dimensions
 
     # Define the embedding matrices as variable
     with tf.name_scope("embedding_matrices") as scope:
@@ -50,17 +55,31 @@ def network():
     #
     # # get prediction
     o = tf.matmul(cnet, p) # D*1
-    pred = tf.matmul(tf.transpose(W), (o + unet)) # V*1
-    print pred
+    pred = tf.nn.softmax(tf.matmul(tf.transpose(W), (o + unet))) # V*1
+
+    # get cross entropy erro
+    cross_entropy = -tf.reduce_sum(y * tf.log(pred))
+    optimizer = tf.train.GradientDescentOptimizer(0.5)
+    train = optimizer.minimize(cross_entropy)
 
     init = tf.initialize_all_variables()
 
-    with tf.Session() as sess:
-        zeton = sess.run(init)
-        #import pdb; pdb.set_trace()
-        print "y"
-        tf.train.SummaryWriter("data/", sess.graph.as_graph_def(add_shapes=True))
-        #tf.train.write_graph(sess.graph_def, './', 'graph.pbtxt')
+    # Run graph session
+    sess = tf.Session()
+    sess.run(init)
+
+    # Prepare the event logging
+    summary_op = tf.merge_all_summaries()
+    summary_writer = tf.train.SummaryWriter('data',
+                                        graph_def=sess.graph_def)
+
+
+    # Fit the training data
+    for step in range(10):
+        #batch_xs, batch_ys = mnist.train.next_batch(100)
+        summary_str = sess.run(train, feed_dict={x: inputt, y: answer, q: question})
+        summary_writer.add_summary(summary_str, step)
+    #tf.train.SummaryWriter("data/", sess.graph.as_graph_def(add_shapes=True))
 
 if __name__ == "__main__":
     network()
